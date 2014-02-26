@@ -61,13 +61,11 @@ class Scanner
         $str = substr($this->data, $this->pos, 8);
         $this->pos += 8;
 
-        $double = unpack('d', $str);
-
-        if ($litteEndian) {
-            return $double[1];
+        if (!$litteEndian) {
+            $str = strrev($str);
         }
 
-        $double = unpack('d', strrev(pack('d', $double[1])));
+        $double = unpack('d', $str);
 
         return $double[1];
     }
