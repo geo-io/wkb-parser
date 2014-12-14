@@ -1,7 +1,7 @@
 Geo I/O WKB Parser
 ==================
 
-[![Build Status](https://travis-ci.org/geo-io/wkb-parser.png?branch=master)](https://travis-ci.org/geo-io/wkb-parser)
+[![Build Status](https://travis-ci.org/geo-io/wkb-parser.svg?branch=master)](https://travis-ci.org/geo-io/wkb-parser)
 [![Coverage Status](https://img.shields.io/coveralls/geo-io/wkb-parser.svg)](https://coveralls.io/r/geo-io/wkb-parser)
 
 A parser which transforms
