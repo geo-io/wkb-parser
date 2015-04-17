@@ -32,12 +32,8 @@ Install [through composer](http://getcomposer.org). Check the
 [packagist page](https://packagist.org/packages/geo-io/wkb-parser) for all
 available versions.
 
-```json
-{
-    "require": {
-        "geo-io/wkb-parser": "0.1.*@dev"
-    }
-}
+```bash
+composer require geo-io/wkb-parser
 ```
 
 License
