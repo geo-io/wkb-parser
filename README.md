@@ -22,7 +22,7 @@ class MyFactory implements GeoIO\Factory
 $factory = MyFactory();
 $parser = new GeoIO\WKB\Parser\Parser($factory);
 
-$myPoint = $parse->parse('000000000140000000000000004010000000000000'); // POINT(2.0 4.0)
+$myPoint = $parser->parse('000000000140000000000000004010000000000000'); // POINT(2.0 4.0)
 ```
 
 Installation
