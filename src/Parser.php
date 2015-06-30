@@ -106,8 +106,8 @@ class Parser
         if ($this->srid && $srid !== $this->srid) {
             throw new \RuntimeException(sprintf(
                 'SRID mismatch between %s and expected %s.',
-                json_encode($dimension),
-                json_encode($this->dimension)
+                json_encode($srid),
+                json_encode($this->srid)
             ));
         }
 
