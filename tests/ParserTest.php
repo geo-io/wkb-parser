@@ -441,6 +441,65 @@ class ParserTest extends \PHPUnit_Framework_TestCase
         $parser->parse('00800000040000000200800000013ff000000000000040000000000000004014000000000000000000000140080000000000004010000000000000');
     }
 
+    /**
+     * @see Issue #3
+     */
+    public function testMultiPointWithSrid()
+    {
+        $factory = Mockery::mock('GeoIO\\Factory');
+
+        $factory
+            ->shouldReceive('createMultiPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, Mockery::any(), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(-67, -9), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(-23, 53), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(83, 19), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(22, 74), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(14, -83), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(-147, 44), 4326)
+        ;
+
+        $factory
+            ->shouldReceive('createPoint')
+            ->once()
+            ->with(Dimension::DIMENSION_2D, $this->coords(-37, -55), 4326)
+        ;
+
+        $parser = new Parser($factory);
+        $parser->parse('0104000020E61000000700000001010000000000000000C050C000000000000022C0010100000000000000000037C00000000000804A4001010000000000000000C05440000000000000334001010000000000000000003640000000000080524001010000000000000000002C400000000000C054C0010100000000000000006062C00000000000004640010100000000000000008042C00000000000804BC0');
+    }
+
     public function testMultiLineString()
     {
         $factory = Mockery::mock('GeoIO\\Factory');

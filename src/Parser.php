@@ -103,7 +103,7 @@ class Parser
             ));
         }
 
-        if ($this->srid && $srid !== $this->srid) {
+        if (null !== $srid && null !== $this->srid && $srid !== $this->srid) {
             throw new \RuntimeException(sprintf(
                 'SRID mismatch between %s and expected %s.',
                 json_encode($srid),
@@ -119,7 +119,10 @@ class Parser
             ));
         }
 
-        $this->srid = $srid;
+        if (null !== $srid) {
+            $this->srid = $srid;
+        }
+
         $this->dimension = $dimension;
 
         return $this->geometry($type);
