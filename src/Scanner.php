@@ -12,6 +12,7 @@ final class Scanner
     private string $data;
     private int $len;
     private int $pos;
+    private ?bool $littleEndian;
 
     public function __construct(string $data)
     {
@@ -22,6 +23,18 @@ final class Scanner
         $this->data = $data;
         $this->len = strlen($data);
         $this->pos = 0;
+        $this->littleEndian = null;
+    }
+
+    public function littleEndian(): void
+    {
+        $endianValue = $this->byte();
+
+        $this->littleEndian = match ($endianValue) {
+            0 => false,
+            1 => true,
+            default => throw new RuntimeException(sprintf('Bad endian byte value %d.', $endianValue)),
+        };
     }
 
     public function byte(): int
@@ -40,7 +53,7 @@ final class Scanner
         return (int) $result[1];
     }
 
-    public function integer(bool $litteEndian): int
+    public function integer(): int
     {
         if ($this->pos + 4 > $this->len) {
             // @codeCoverageIgnoreStart
@@ -51,12 +64,12 @@ final class Scanner
         $str = substr($this->data, $this->pos, 4);
         $this->pos += 4;
 
-        $result = unpack($litteEndian ? 'V' : 'N', $str);
+        $result = unpack($this->littleEndian ? 'V' : 'N', $str);
 
         return (int) $result[1];
     }
 
-    public function double(bool $litteEndian): float
+    public function double(): float
     {
         if ($this->pos + 8 > $this->len) {
             // @codeCoverageIgnoreStart
@@ -67,7 +80,7 @@ final class Scanner
         $str = substr($this->data, $this->pos, 8);
         $this->pos += 8;
 
-        if (!$litteEndian) {
+        if (!$this->littleEndian) {
             $str = strrev($str);
         }
 

@@ -54,16 +54,16 @@ final class Parser
         ?int $parentSid,
         ?int $expectedType,
     ): mixed {
-        $litteEndian = $this->isLittleEndian($scanner);
+        $scanner->littleEndian();
 
-        $type = $scanner->integer($litteEndian);
+        $type = $scanner->integer();
 
         $srid = null;
         $hasZ = false;
         $hasM = false;
 
         if ($type & self::MASK_SRID) {
-            $srid = $scanner->integer($litteEndian);
+            $srid = $scanner->integer();
             $type &= ~self::MASK_SRID;
         }
 
@@ -133,28 +133,14 @@ final class Parser
 
         return $this->geometry(
             $scanner,
-            $litteEndian,
             $dimension,
             $srid ?? $parentSid,
             $type,
         );
     }
 
-    private function isLittleEndian(
-        Scanner $scanner,
-    ): bool {
-        $endianValue = $scanner->byte();
-
-        return match ($endianValue) {
-            0 => false,
-            1 => true,
-            default => throw new RuntimeException(sprintf('Bad endian byte value %s.', json_encode($endianValue))),
-        };
-    }
-
     private function geometry(
         Scanner $scanner,
-        bool $litteEndian,
         string $dimension,
         ?int $srid,
         int $type,
@@ -163,24 +149,21 @@ final class Parser
             case self::TYPE_POINT:
                 return $this->point(
                     $scanner,
-                    $litteEndian,
                     $dimension,
                     $srid,
                 );
             case self::TYPE_LINESTRING:
                 return $this->lineString(
                     $scanner,
-                    $litteEndian,
                     $dimension,
                     $srid,
                 );
             case self::TYPE_POLYGON:
-                $num = $scanner->integer($litteEndian);
+                $num = $scanner->integer();
                 $linearRings = [];
                 for ($i = 0; $i < $num; ++$i) {
                     $linearRings[] = $this->lineString(
                         $scanner,
-                        $litteEndian,
                         $dimension,
                         $srid,
                         true,
@@ -193,7 +176,7 @@ final class Parser
                     $linearRings,
                 );
             case self::TYPE_MULTIPOINT:
-                $num = $scanner->integer($litteEndian);
+                $num = $scanner->integer();
                 $points = [];
                 for ($i = 0; $i < $num; ++$i) {
                     $points[] = $this->doParse(
@@ -210,7 +193,7 @@ final class Parser
                     $points,
                 );
             case self::TYPE_MULTILINESTRING:
-                $num = $scanner->integer($litteEndian);
+                $num = $scanner->integer();
                 $lineStrings = [];
                 for ($i = 0; $i < $num; ++$i) {
                     $lineStrings[] = $this->doParse(
@@ -227,7 +210,7 @@ final class Parser
                     $lineStrings,
                 );
             case self::TYPE_MULTIPOLYGON:
-                $num = $scanner->integer($litteEndian);
+                $num = $scanner->integer();
                 $polygons = [];
                 for ($i = 0; $i < $num; ++$i) {
                     $polygons[] = $this->doParse(
@@ -245,7 +228,7 @@ final class Parser
                 );
             case self::TYPE_GEOMETRYCOLLECTION:
             default:
-                $num = $scanner->integer($litteEndian);
+                $num = $scanner->integer();
                 $geometries = [];
                 for ($i = 0; $i < $num; ++$i) {
                     $geometries[] = $this->doParse(
@@ -266,18 +249,16 @@ final class Parser
 
     private function lineString(
         Scanner $scanner,
-        bool $litteEndian,
         string $dimension,
         ?int $srid,
         bool $isLinearRing = false,
     ): mixed {
-        $num = $scanner->integer($litteEndian);
+        $num = $scanner->integer();
 
         $points = [];
         for ($i = 0; $i < $num; ++$i) {
             $points[] = $this->point(
                 $scanner,
-                $litteEndian,
                 $dimension,
                 $srid,
             );
@@ -300,13 +281,12 @@ final class Parser
 
     private function point(
         Scanner $scanner,
-        bool $litteEndian,
         string $dimension,
         ?int $srid,
     ): mixed {
         $coordinates = [
-            'x' => $scanner->double($litteEndian),
-            'y' => $scanner->double($litteEndian),
+            'x' => $scanner->double(),
+            'y' => $scanner->double(),
             'z' => null,
             'm' => null,
         ];
@@ -315,14 +295,14 @@ final class Parser
             Dimension::DIMENSION_3DZ === $dimension ||
             Dimension::DIMENSION_4D === $dimension
         ) {
-            $coordinates['z'] = $scanner->double($litteEndian);
+            $coordinates['z'] = $scanner->double();
         }
 
         if (
             Dimension::DIMENSION_3DM === $dimension ||
             Dimension::DIMENSION_4D === $dimension
         ) {
-            $coordinates['m'] = $scanner->double($litteEndian);
+            $coordinates['m'] = $scanner->double();
         }
 
         return $this->factory->createPoint(
