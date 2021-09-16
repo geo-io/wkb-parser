@@ -1,72 +1,80 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GeoIO\WKB\Parser;
 
+use GeoIO\Coordinates;
 use GeoIO\Dimension;
 use GeoIO\Factory;
 use GeoIO\WKB\Parser\Exception\ParserException;
+use RuntimeException;
+use Throwable;
 
-class Parser
+final class Parser
 {
-    const MASK_SRID = 0x20000000;
-    const MASK_Z = 0x80000000;
-    const MASK_M = 0x40000000;
+    private const MASK_SRID = 0x20000000;
+    private const MASK_Z = 0x80000000;
+    private const MASK_M = 0x40000000;
 
-    const TYPE_POINT = 1;
-    const TYPE_LINESTRING = 2;
-    const TYPE_POLYGON = 3;
-    const TYPE_MULTIPOINT = 4;
-    const TYPE_MULTILINESTRING = 5;
-    const TYPE_MULTIPOLYGON = 6;
-    const TYPE_GEOMETRYCOLLECTION = 7;
+    private const TYPE_POINT = 1;
+    private const TYPE_LINESTRING = 2;
+    private const TYPE_POLYGON = 3;
+    private const TYPE_MULTIPOINT = 4;
+    private const TYPE_MULTILINESTRING = 5;
+    private const TYPE_MULTIPOLYGON = 6;
+    private const TYPE_GEOMETRYCOLLECTION = 7;
 
-    private $scanner;
-
-    private $factory;
-
-    private $dimension;
-    private $srid;
-    private $litteEndian;
+    private Factory $factory;
 
     public function __construct(Factory $factory)
     {
         $this->factory = $factory;
     }
 
-    public function parse($str)
+    public function parse(string $str): mixed
     {
         try {
-            $this->scanner = new Scanner($str);
+            $scanner = new Scanner($str);
 
-            return $this->doParse();
-        } catch (\Exception $e) {
+            return $this->doParse(
+                $scanner,
+                null,
+                null,
+                null,
+            );
+        } catch (Throwable $e) {
             throw new ParserException(sprintf('Parsing failed: %s', $e->getMessage()), 0, $e);
         }
     }
 
-    protected function doParse($expectedType = null)
-    {
-        $this->endian();
+    private function doParse(
+        Scanner $scanner,
+        ?string $parentDimension,
+        ?int $parentSid,
+        ?int $expectedType,
+    ): mixed {
+        $litteEndian = $this->isLittleEndian($scanner);
 
-        $type = $this->scanner->integer($this->litteEndian);
+        $type = $scanner->integer($litteEndian);
 
         $srid = null;
         $hasZ = false;
         $hasM = false;
 
         if ($type & self::MASK_SRID) {
-            $srid = $this->scanner->integer($this->litteEndian);
-            $type = ($type & ~self::MASK_SRID);
+            $srid = $scanner->integer($litteEndian);
+            $type &= ~self::MASK_SRID;
         }
 
         if ($type & self::MASK_Z) {
             $hasZ = true;
-            $type = ($type & ~self::MASK_Z);
+            $type &= ~self::MASK_Z;
         }
 
         if ($type & self::MASK_M) {
             $hasM = true;
-            $type = ($type & ~self::MASK_M);
+            $type &= ~self::MASK_M;
         }
 
         $wkb12 = false;
@@ -96,171 +104,231 @@ class Parser
         }
 
         if ($expectedType && $expectedType !== $type) {
-            throw new \RuntimeException(sprintf(
+            throw new RuntimeException(sprintf(
                 'Unexpected geometry type %s, expected %s.',
                 json_encode($type),
-                json_encode($expectedType)
+                json_encode($expectedType),
             ));
         }
 
-        if (null !== $srid && null !== $this->srid && $srid !== $this->srid) {
-            throw new \RuntimeException(sprintf(
+        if (null !== $srid && null !== $parentSid && $srid !== $parentSid) {
+            // @codeCoverageIgnoreStart
+            // Just to be safe. This usually can't happen as WKB has the SRID
+            // only set for the top level geometry.
+            throw new RuntimeException(sprintf(
                 'SRID mismatch between %s and expected %s.',
                 json_encode($srid),
-                json_encode($this->srid)
+                json_encode($parentSid),
             ));
+            // @codeCoverageIgnoreEnd
         }
 
-        if ($this->dimension && $dimension !== $this->dimension) {
-            throw new \RuntimeException(sprintf(
+        if ($parentDimension && $dimension !== $parentDimension) {
+            throw new RuntimeException(sprintf(
                 'Dimension mismatch between %s and expected %s.',
                 json_encode($dimension),
-                json_encode($this->dimension)
+                json_encode($parentDimension),
             ));
         }
 
-        if (null !== $srid) {
-            $this->srid = $srid;
-        }
-
-        $this->dimension = $dimension;
-
-        return $this->geometry($type);
+        return $this->geometry(
+            $scanner,
+            $litteEndian,
+            $dimension,
+            $srid ?? $parentSid,
+            $type,
+        );
     }
 
-    protected function endian()
-    {
-        $endianValue = $this->scanner->byte();
+    private function isLittleEndian(
+        Scanner $scanner,
+    ): bool {
+        $endianValue = $scanner->byte();
 
-        switch ($endianValue) {
-            case 0:
-                $this->litteEndian = false;
-                break;
-            case 1:
-                $this->litteEndian = true;
-                break;
-            default:
-                throw new \RuntimeException(sprintf('Bad endian byte value %s.', json_encode($endianValue)));
-        }
+        return match ($endianValue) {
+            0 => false,
+            1 => true,
+            default => throw new RuntimeException(sprintf('Bad endian byte value %s.', json_encode($endianValue))),
+        };
     }
 
-    protected function geometry($type)
-    {
+    private function geometry(
+        Scanner $scanner,
+        bool $litteEndian,
+        string $dimension,
+        ?int $srid,
+        int $type,
+    ): mixed {
         switch ($type) {
             case self::TYPE_POINT:
-                return $this->point();
+                return $this->point(
+                    $scanner,
+                    $litteEndian,
+                    $dimension,
+                    $srid,
+                );
             case self::TYPE_LINESTRING:
-                return $this->lineString();
+                return $this->lineString(
+                    $scanner,
+                    $litteEndian,
+                    $dimension,
+                    $srid,
+                );
             case self::TYPE_POLYGON:
-                $num = $this->scanner->integer($this->litteEndian);
-                $linearRings = array();
-                for ($i = 0; $i < $num; $i++) {
-                    $linearRings[] = $this->lineString(true);
+                $num = $scanner->integer($litteEndian);
+                $linearRings = [];
+                for ($i = 0; $i < $num; ++$i) {
+                    $linearRings[] = $this->lineString(
+                        $scanner,
+                        $litteEndian,
+                        $dimension,
+                        $srid,
+                        true,
+                    );
                 }
 
                 return $this->factory->createPolygon(
-                    $this->dimension,
+                    $dimension,
+                    $srid,
                     $linearRings,
-                    $this->srid
                 );
             case self::TYPE_MULTIPOINT:
-                $num = $this->scanner->integer($this->litteEndian);
-                $points = array();
-                for ($i = 0; $i < $num; $i++) {
-                    $points[] = $this->doParse(self::TYPE_POINT);
+                $num = $scanner->integer($litteEndian);
+                $points = [];
+                for ($i = 0; $i < $num; ++$i) {
+                    $points[] = $this->doParse(
+                        $scanner,
+                        $dimension,
+                        $srid,
+                        self::TYPE_POINT,
+                    );
                 }
 
                 return $this->factory->createMultiPoint(
-                    $this->dimension,
+                    $dimension,
+                    $srid,
                     $points,
-                    $this->srid
                 );
             case self::TYPE_MULTILINESTRING:
-                $num = $this->scanner->integer($this->litteEndian);
-                $lineStrings = array();
-                for ($i = 0; $i < $num; $i++) {
-                    $lineStrings[] = $this->doParse(self::TYPE_LINESTRING);
+                $num = $scanner->integer($litteEndian);
+                $lineStrings = [];
+                for ($i = 0; $i < $num; ++$i) {
+                    $lineStrings[] = $this->doParse(
+                        $scanner,
+                        $dimension,
+                        $srid,
+                        self::TYPE_LINESTRING,
+                    );
                 }
 
                 return $this->factory->createMultiLineString(
-                    $this->dimension,
+                    $dimension,
+                    $srid,
                     $lineStrings,
-                    $this->srid
                 );
             case self::TYPE_MULTIPOLYGON:
-                $num = $this->scanner->integer($this->litteEndian);
-                $polygons = array();
-                for ($i = 0; $i < $num; $i++) {
-                    $polygons[] = $this->doParse(self::TYPE_POLYGON);
+                $num = $scanner->integer($litteEndian);
+                $polygons = [];
+                for ($i = 0; $i < $num; ++$i) {
+                    $polygons[] = $this->doParse(
+                        $scanner,
+                        $dimension,
+                        $srid,
+                        self::TYPE_POLYGON,
+                    );
                 }
 
                 return $this->factory->createMultiPolygon(
-                    $this->dimension,
+                    $dimension,
+                    $srid,
                     $polygons,
-                    $this->srid
                 );
+            case self::TYPE_GEOMETRYCOLLECTION:
             default:
-                $num = $this->scanner->integer($this->litteEndian);
-                $geometries = array();
-                for ($i = 0; $i < $num; $i++) {
-                    $geometries[] = $this->doParse();
+                $num = $scanner->integer($litteEndian);
+                $geometries = [];
+                for ($i = 0; $i < $num; ++$i) {
+                    $geometries[] = $this->doParse(
+                        $scanner,
+                        $dimension,
+                        $srid,
+                        null,
+                    );
                 }
 
                 return $this->factory->createGeometryCollection(
-                    $this->dimension,
+                    $dimension,
+                    $srid,
                     $geometries,
-                    $this->srid
                 );
         }
     }
 
-    protected function lineString($isLinearRing = false)
-    {
-        $num = $this->scanner->integer($this->litteEndian);
+    private function lineString(
+        Scanner $scanner,
+        bool $litteEndian,
+        string $dimension,
+        ?int $srid,
+        bool $isLinearRing = false,
+    ): mixed {
+        $num = $scanner->integer($litteEndian);
 
-        $points = array();
-        for ($i = 0; $i < $num; $i++) {
-            $points[] = $this->point();
+        $points = [];
+        for ($i = 0; $i < $num; ++$i) {
+            $points[] = $this->point(
+                $scanner,
+                $litteEndian,
+                $dimension,
+                $srid,
+            );
         }
 
         if ($isLinearRing) {
             return $this->factory->createLinearRing(
-                $this->dimension,
+                $dimension,
+                $srid,
                 $points,
-                $this->srid
             );
         }
 
         return $this->factory->createLineString(
-            $this->dimension,
+            $dimension,
+            $srid,
             $points,
-            $this->srid
         );
     }
 
-    protected function point()
-    {
-        $coordinates = array(
-            'x' => $this->scanner->double($this->litteEndian),
-            'y' => $this->scanner->double($this->litteEndian),
+    private function point(
+        Scanner $scanner,
+        bool $litteEndian,
+        string $dimension,
+        ?int $srid,
+    ): mixed {
+        $coordinates = [
+            'x' => $scanner->double($litteEndian),
+            'y' => $scanner->double($litteEndian),
             'z' => null,
-            'm' => null
-        );
+            'm' => null,
+        ];
 
-        if (Dimension::DIMENSION_3DZ === $this->dimension ||
-            Dimension::DIMENSION_4D === $this->dimension) {
-            $coordinates['z'] = $this->scanner->double($this->litteEndian);
+        if (
+            Dimension::DIMENSION_3DZ === $dimension ||
+            Dimension::DIMENSION_4D === $dimension
+        ) {
+            $coordinates['z'] = $scanner->double($litteEndian);
         }
 
-        if (Dimension::DIMENSION_3DM === $this->dimension ||
-            Dimension::DIMENSION_4D === $this->dimension) {
-            $coordinates['m'] = $this->scanner->double($this->litteEndian);
+        if (
+            Dimension::DIMENSION_3DM === $dimension ||
+            Dimension::DIMENSION_4D === $dimension
+        ) {
+            $coordinates['m'] = $scanner->double($litteEndian);
         }
 
         return $this->factory->createPoint(
-            $this->dimension,
-            $coordinates,
-            $this->srid
+            $dimension,
+            $srid,
+            new Coordinates(...$coordinates),
         );
     }
 }

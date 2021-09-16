@@ -1,14 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GeoIO\WKB\Parser;
 
-class Scanner
-{
-    private $data;
-    private $len;
-    private $pos;
+use RuntimeException;
+use function strlen;
 
-    public function __construct($data)
+final class Scanner
+{
+    private string $data;
+    private int $len;
+    private int $pos;
+
+    public function __construct(string $data)
     {
         if (preg_match('/[0-9a-fA-F]+/', $data[0])) {
             $data = pack('H*', $data);
@@ -19,29 +24,28 @@ class Scanner
         $this->pos = 0;
     }
 
-    public function remaining()
-    {
-        return $this->len - $this->pos;
-    }
-
-    public function byte()
+    public function byte(): int
     {
         if ($this->pos + 1 > $this->len) {
-            throw new \RuntimeException('Not enough bytes left to fulfill 1 byte.');
+            // @codeCoverageIgnoreStart
+            throw new RuntimeException('Not enough bytes left to fulfill 1 byte.');
+            // @codeCoverageIgnoreEnd
         }
 
-        $str = substr($this->data, $this->pos, 1);
-        $this->pos += 1;
+        $str = $this->data[$this->pos];
+        ++$this->pos;
 
         $result = unpack('C', $str);
 
-        return $result[1];
+        return (int) $result[1];
     }
 
-    public function integer($litteEndian)
+    public function integer(bool $litteEndian): int
     {
         if ($this->pos + 4 > $this->len) {
-            throw new \RuntimeException('Not enough bytes left to fulfill 1 integer.');
+            // @codeCoverageIgnoreStart
+            throw new RuntimeException('Not enough bytes left to fulfill 1 integer.');
+            // @codeCoverageIgnoreEnd
         }
 
         $str = substr($this->data, $this->pos, 4);
@@ -49,13 +53,15 @@ class Scanner
 
         $result = unpack($litteEndian ? 'V' : 'N', $str);
 
-        return $result[1];
+        return (int) $result[1];
     }
 
-    public function double($litteEndian)
+    public function double(bool $litteEndian): float
     {
         if ($this->pos + 8 > $this->len) {
-            throw new \RuntimeException('Not enough bytes left to fulfill 1 double.');
+            // @codeCoverageIgnoreStart
+            throw new RuntimeException('Not enough bytes left to fulfill 1 double.');
+            // @codeCoverageIgnoreEnd
         }
 
         $str = substr($this->data, $this->pos, 8);
@@ -67,6 +73,6 @@ class Scanner
 
         $double = unpack('d', $str);
 
-        return $double[1];
+        return (float) $double[1];
     }
 }

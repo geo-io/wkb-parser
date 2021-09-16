@@ -1,5 +1,6 @@
 /build
 /vendor
+.phpunit.result.cache
 composer.lock
 composer.phar
 phpunit.xml

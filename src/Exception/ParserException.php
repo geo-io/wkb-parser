@@ -1,5 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GeoIO\WKB\Parser\Exception;
 
-class ParserException extends \RuntimeException implements Exception {}
+use RuntimeException;
+
+final class ParserException extends RuntimeException implements Exception
+{
+}

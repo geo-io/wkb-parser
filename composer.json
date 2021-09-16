@@ -16,15 +16,20 @@
         }
     ],
     "require": {
-        "php": ">=5.3.3",
-        "geo-io/interface": "~1.0"
+        "php": "^8.0",
+        "geo-io/interface": "^2.x-dev"
     },
     "require-dev": {
-        "mockery/mockery": "~0.9.0"
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {
             "GeoIO\\WKB\\Parser\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GeoIO\\WKB\\Parser\\": "tests/"
         }
     }
 }
