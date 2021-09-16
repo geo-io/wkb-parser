@@ -386,7 +386,7 @@ class ParserTest extends TestCase
         $parser = new Parser($this->createMock(Factory::class));
 
         $this->expectException(ParserException::class);
-        $this->expectExceptionMessage('Parsing failed: Dimension mismatch between "2D" and expected "3DZ".');
+        $this->expectExceptionMessage('Parsing failed: Dimension mismatch between 2D and expected 3DZ.');
 
         $parser->parse('00800000040000000200800000013ff000000000000040000000000000004014000000000000000000000140080000000000004010000000000000');
     }

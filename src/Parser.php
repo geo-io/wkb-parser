@@ -105,9 +105,9 @@ final class Parser
 
         if ($expectedType && $expectedType !== $type) {
             throw new RuntimeException(sprintf(
-                'Unexpected geometry type %s, expected %s.',
-                json_encode($type),
-                json_encode($expectedType),
+                'Unexpected geometry type %d, expected %d.',
+                $type,
+                $expectedType,
             ));
         }
 
@@ -116,9 +116,9 @@ final class Parser
             // Just to be safe. This usually can't happen as WKB has the SRID
             // only set for the top level geometry.
             throw new RuntimeException(sprintf(
-                'SRID mismatch between %s and expected %s.',
-                json_encode($srid),
-                json_encode($parentSid),
+                'SRID mismatch between %d and expected %d.',
+                $srid,
+                $parentSid,
             ));
             // @codeCoverageIgnoreEnd
         }
@@ -126,8 +126,8 @@ final class Parser
         if ($parentDimension && $dimension !== $parentDimension) {
             throw new RuntimeException(sprintf(
                 'Dimension mismatch between %s and expected %s.',
-                json_encode($dimension),
-                json_encode($parentDimension),
+                $dimension,
+                $parentDimension,
             ));
         }
 
