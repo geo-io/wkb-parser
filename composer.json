@@ -26,10 +26,5 @@
         "psr-4": {
             "GeoIO\\WKB\\Parser\\": "src/"
         }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0-dev"
-        }
     }
 }
