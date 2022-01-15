@@ -79,12 +79,12 @@ final class Parser
 
         $wkb12 = false;
 
-        if (($type / 1000) & 1) {
+        if (((int) ($type / 1000)) & 1) {
             $hasZ = true;
             $wkb12 = true;
         }
 
-        if (($type / 1000) & 2) {
+        if (((int) ($type / 1000)) & 2) {
             $hasM = true;
             $wkb12 = true;
         }
