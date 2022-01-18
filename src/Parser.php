@@ -50,7 +50,7 @@ final class Parser
 
     private function doParse(
         Scanner $scanner,
-        ?string $parentDimension,
+        ?Dimension $parentDimension,
         ?int $parentSid,
         ?int $expectedType,
     ): mixed {
@@ -126,8 +126,8 @@ final class Parser
         if ($parentDimension && $dimension !== $parentDimension) {
             throw new RuntimeException(sprintf(
                 'Dimension mismatch between %s and expected %s.',
-                $dimension,
-                $parentDimension,
+                $dimension->value,
+                $parentDimension->value,
             ));
         }
 
@@ -141,7 +141,7 @@ final class Parser
 
     private function geometry(
         Scanner $scanner,
-        string $dimension,
+        Dimension $dimension,
         ?int $srid,
         int $type,
     ): mixed {
@@ -249,7 +249,7 @@ final class Parser
 
     private function lineString(
         Scanner $scanner,
-        string $dimension,
+        Dimension $dimension,
         ?int $srid,
         bool $isLinearRing = false,
     ): mixed {
@@ -281,7 +281,7 @@ final class Parser
 
     private function point(
         Scanner $scanner,
-        string $dimension,
+        Dimension $dimension,
         ?int $srid,
     ): mixed {
         $coordinates = [
