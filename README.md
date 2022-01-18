@@ -39,4 +39,4 @@ composer require geo-io/wkb-parser
 License
 -------
 
-Geo I/O WKB Parser is released under the [MIT License](LICENSE).
+Copyright (c) 2014-2022 Jan Sorgalla. Released under the [MIT License](LICENSE).
