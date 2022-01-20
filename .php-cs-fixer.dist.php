@@ -31,5 +31,9 @@ return (new PhpCsFixer\Config())
             ],
         ],
         'single_line_throw' => false,
+        'trailing_comma_in_multiline' => [
+            'after_heredoc' => true,
+            'elements' => ['arrays', 'arguments', 'parameters'],
+        ],
     ])
     ->setFinder($finder);
