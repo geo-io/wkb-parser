@@ -2,7 +2,7 @@ Geo I/O WKB Parser
 ==================
 
 [![Build Status](https://github.com/geo-io/wkb-parser/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/geo-io/wkb-parser/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/geo-io/wkb-parser/badge.svg?branch=main&service=github)](https://coveralls.io/github/geo-io/wkb-parser?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/geo-io/wkb-parser/badge.svg?branch=main)](https://coveralls.io/github/geo-io/wkb-parser?branch=main)
 
 A parser which transforms
 [Well-known binary (WKB)](http://en.wikipedia.org/wiki/Well-known_text#Well-known_binary)
